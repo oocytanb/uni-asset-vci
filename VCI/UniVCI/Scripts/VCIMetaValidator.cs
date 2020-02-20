@@ -21,29 +21,29 @@ namespace VCI
         private static readonly Dictionary<string, ValidationRule> ValidationRules =
             new Dictionary<string, ValidationRule>
             {
-                {"Version", new ValidationRule(false, 255)},
-                {"Author", new ValidationRule(true, 255)},
-                {"ContactInformation", new ValidationRule(false, 255)},
-                {"Reference", new ValidationRule(false, 255)},
-                {"Title", new ValidationRule(true, 255)},
-                {"Description", new ValidationRule(false, 500)},
-                {"ModelDataOtherLicenseUrl", new ValidationRule(false, 2048)},
-                {"ScriptOtherLicenseUrl", new ValidationRule(false, 2048)}
+                {"Version", new ValidationRule(false, VCIValidator.VersionTextLength)},
+                {"Author", new ValidationRule(true, VCIValidator.AuthorTextLength)},
+                {"ContactInformation", new ValidationRule(false, VCIValidator.ContactInformationTextLength)},
+                {"Reference", new ValidationRule(false, VCIValidator.ReferenceTextLength)},
+                {"Title", new ValidationRule(true, VCIValidator.TitleTextLength)},
+                {"Description", new ValidationRule(false, VCIValidator.DescriptionTextLength)},
+                {"ModelDataOtherLicenseUrl", new ValidationRule(false, VCIValidator.ModelDataOtherLicenseUrlLength)},
+                {"ScriptOtherLicenseUrl", new ValidationRule(false, VCIValidator.ScriptOtherLicenseUrlLength)}
             };
 
         private static string ValidateField(string fieldName, string text)
         {
             var validationRule = ValidationRules[fieldName];
             if (validationRule.IsRequired && string.IsNullOrEmpty(text))
-                return string.Format("{0}を入力してください。", fieldName);
+                return string.Format(VCIConfig.GetText("input"), fieldName);
 
             if (text != null && validationRule.MaxLength < text.Length)
-                return string.Format("{0}を{1}文字以内にして下さい。", fieldName, validationRule.MaxLength);
+                return string.Format(VCIConfig.GetText("input_less_than"), fieldName, validationRule.MaxLength);
 
             return "";
         }
 
-        public static bool Validate(VCIObject vciObject, out string errorMessage)
+        public static void Validate(VCIObject vciObject)
         {
             var errorMessages = new[]
             {
@@ -59,12 +59,10 @@ namespace VCI
 
             if (errorMessages.Any(m => m != ""))
             {
-                errorMessage = string.Join(Environment.NewLine, errorMessages.Where(m => m != "").ToArray());
-                return false;
+                throw new VCIValidatorException(
+                    ValidationErrorType.InvalidMetaData,
+                    string.Join(Environment.NewLine, errorMessages.Where(m => m != "").ToArray()));
             }
-
-            errorMessage = "";
-            return true;
         }
     }
 }
